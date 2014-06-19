@@ -1,4 +1,4 @@
-package de.codesourcery.reflectiondsl;
+package de.codesourcery.tinyscript;
 
 public class Scanner 
 {

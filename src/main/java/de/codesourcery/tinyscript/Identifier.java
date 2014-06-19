@@ -1,4 +1,4 @@
-package de.codesourcery.reflectiondsl;
+package de.codesourcery.tinyscript;
 
 import java.util.regex.Pattern;
 
@@ -27,5 +27,10 @@ public class Identifier {
 	
 	public static boolean isValidIdentifier(String s) {
 		return s != null && VALID_IDENTIFIER.matcher(s).matches();
+	}
+	
+	@Override
+	public String toString() {
+		return "Identifier[ "+name+" ]";
 	}
 }

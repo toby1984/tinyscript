@@ -1,12 +1,13 @@
-package de.codesourcery.reflectiondsl;
+package de.codesourcery.tinyscript;
 
 import java.text.ParseException;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
-public class ExpressionParser {
+public class ExpressionParser<T> {
 
 	private Lexer lexer;
-	private IParseContext context;
+	private IParseContext<T> context;
 
 	private int lastErrorOffset = -1;
 	private String lastErrorMsg;	
@@ -14,18 +15,7 @@ public class ExpressionParser {
 	public ExpressionParser() {
 	}
 	
-	public static void main(String[] args) throws ParseException {
-		
-		final String expression = "a"; 
-		Lexer lexer = new Lexer(new Scanner(expression) );
-		
-		final ExpressionParser parser = new ExpressionParser();
-		IParseContext ctx = new ParseContext( parser );
-		parser.parse( lexer ,  ctx );
-		System.out.println("Result: "+ctx.getResult());
-	}
-
-	public void parse(Lexer lexer,IParseContext context) throws ParseException 
+	public void parse(Lexer lexer,IParseContext<T> context) throws ParseException 
 	{
 		this.lexer = lexer;
 		this.context = context;
@@ -237,6 +227,10 @@ public class ExpressionParser {
 		if ( parseFunctionInvocation() ) {
 			return true;
 		}
+		
+		if ( parseIdentifier() ) {
+			return true;
+		}
 
 		if ( parseBoolean() || parseNumber() || parseString() ) {
 			return true;
@@ -252,6 +246,15 @@ public class ExpressionParser {
 		}		
 		return errorLater("Expected either a number, a string , a boolean value , function invocation or opening parens");		
 	}		
+
+	private boolean parseIdentifier() 
+	{
+		if ( peek(TokenType.IDENTIFIER ) ) {
+			context.pushValue( new Identifier( lexer.next().text ) );
+			return true;
+		}
+		return false;
+	}
 
 	private boolean parseString() 
 	{
@@ -321,7 +324,8 @@ public class ExpressionParser {
 				final String functionName = lexer.next(TokenType.IDENTIFIER).text;
 				if ( consume( TokenType.PARENS_OPEN ) && parseArgumentList() && consume( TokenType.PARENS_CLOSE ) ) 
 				{
-					final List<Object> args = (List<Object>) context.pop();
+					@SuppressWarnings("unchecked")
+					final List<T> args = (List<T>) context.pop();
 					context.pushFunctionInvocation(functionName,args);
 					return true;
 				}
@@ -357,18 +361,13 @@ public class ExpressionParser {
 		return result;
 	}
 
-	@FunctionalInterface
-	private interface Block {
-		public boolean apply();
-	}
-
-	private boolean tryParse(Block block) 
+	private boolean tryParse(BooleanSupplier block) 
 	{
 		context.saveState();
 		lexer.saveState();
 		boolean success = false;
 		try {
-			success = block.apply();
+			success = block.getAsBoolean();
 		} 
 		finally 
 		{

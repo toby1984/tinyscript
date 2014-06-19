@@ -1,4 +1,4 @@
-package de.codesourcery.reflectiondsl;
+package de.codesourcery.tinyscript;
 
 import java.util.ArrayList;
 import java.util.Arrays;

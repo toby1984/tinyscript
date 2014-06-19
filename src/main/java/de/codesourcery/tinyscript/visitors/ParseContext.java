@@ -1,4 +1,4 @@
-package de.codesourcery.reflectiondsl;
+package de.codesourcery.tinyscript.visitors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-public class ParseContext implements IParseContext {
+import de.codesourcery.tinyscript.IParseContext;
+import de.codesourcery.tinyscript.OperatorType;
+
+public class ParseContext implements IParseContext<Object> {
 
 	private static final boolean DEBUG = true;
 	
@@ -49,7 +52,6 @@ public class ParseContext implements IParseContext {
 		debug("--- dropState --- ");		
 	}	
 	
-	@Override
 	public Object getResult() {
 		if ( values.size() != 1 ) {
 			throw new IllegalStateException("Bad value stack size: "+values.size());
