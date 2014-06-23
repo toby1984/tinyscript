@@ -13,33 +13,33 @@ public enum OperatorType
 	/*
 	 * Note that operator precedence and associativity is implicitly handled by the parser. 
 	 */
-	GT(">",2,DataType.NUMBER) 
+	GT(">",2,4,DataType.NUMBER) 
 	{
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) > 0 );			
 		}
 	},
-	LT("<",2,DataType.NUMBER) 
+	LT("<",2,4,DataType.NUMBER) 
 	{
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) < 0 );
 		}		
 	},
-	GTE(">=",2,DataType.NUMBER) {
+	GTE(">=",2,4,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) >= 0 );
 		}			
 	},
-	LTE("<=",2,DataType.BOOLEAN) {
+	LTE("<=",2,4,DataType.BOOLEAN) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) <= 0 );
 		}			
 	},	
-	EQ("==",2,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
+	EQ("==",2,3,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
 
 		@Override
 		public Object applyHook(Object arg1, Object... additional) 
@@ -65,7 +65,7 @@ public enum OperatorType
 			}
 		}
 	},
-	NEQ("!=",2,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
+	NEQ("!=",2,3,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
 
 		@Override
 		public Object applyHook(Object arg1, Object... additional) 
@@ -73,7 +73,7 @@ public enum OperatorType
 			return ! ((Boolean) EQ.apply(arg1,additional));
 		}
 	},
-	PLUS("+",2,DataType.NUMBER,DataType.STRING) {
+	PLUS("+",2,5,DataType.NUMBER,DataType.STRING) { 
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			if ( DataType.getDataType( left ) == DataType.STRING ) 
@@ -88,38 +88,41 @@ public enum OperatorType
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).plus( a, b)  );
 		}			
 	},
-	MINUS("-",2,DataType.NUMBER) {
+	MINUS("-",2,5,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).minus( a, b)  );
 		}		
 	},
-	TIMES("*",2,DataType.NUMBER) {
+	TIMES("*",2,6,DataType.NUMBER) { 
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).times( a, b)  );
 		}		
 	},
-	DIVIDE("/",2,DataType.NUMBER) {
+	DIVIDE("/",2,6,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).divide( a, b)  );
 		}		
 	},
-	NOT("not",1,DataType.BOOLEAN) 
+	NOT("not",1,7,DataType.BOOLEAN) 
 	{
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return ! ((Boolean) left);
 		}
+		public boolean isLeftAssociative() {
+			return false;
+		}		
 	},
-	AND("and",2,DataType.BOOLEAN) {
+	AND("and",2,2,DataType.BOOLEAN) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return ((Boolean) left) && ((Boolean) right[0]);
 		}
 	},
-	OR("or",2,DataType.BOOLEAN) 
+	OR("or",2,1,DataType.BOOLEAN) 
 	{
 		@Override public Object applyHook(Object left,Object... right)		
 		{
@@ -130,9 +133,11 @@ public enum OperatorType
 	private final String symbol;
 	private Set<DataType> supportedTypes;
 	private final int argumentCount;
+	private final int precedence;	
 	
-	private OperatorType(String op,int argumentCount,DataType supportedType1,DataType... supportedTypes) {
+	private OperatorType(String op,int argumentCount,int precedence,DataType supportedType1,DataType... supportedTypes) {
 		this.symbol=op;
+		this.precedence = precedence;
 		this.argumentCount = argumentCount;
 		this.supportedTypes = new HashSet<>();
 		this.supportedTypes.add( supportedType1 );
@@ -140,6 +145,22 @@ public enum OperatorType
 			this.supportedTypes.addAll( Arrays.asList( supportedTypes ) );
 		}
 	}	
+	
+	public boolean isLeftAssociative() {
+		return true;
+	}
+	
+	public boolean isRightAssociative() {
+		return ! isLeftAssociative();
+	}	
+	
+	public int getPrecedence() {
+		return precedence;
+	}
+	
+	public String toPrettyString() {
+		return symbol;
+	}
 	
 	public int getArgumentCount() {
 		return argumentCount;

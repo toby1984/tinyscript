@@ -12,6 +12,10 @@ public class FunctionCallNode extends ASTNode {
 		this.functionName = functionName;
 	}
 	
+	public Identifier getFunctionName() {
+		return functionName;
+	}
+	
 	@Override
 	public String toString() 
 	{
@@ -24,6 +28,6 @@ public class FunctionCallNode extends ASTNode {
 				buffer.append(",");
 			}
 		}
-		return functionName+"("+buffer+")";
+		return functionName.getSymbol()+"("+buffer+")";
 	}	
 }

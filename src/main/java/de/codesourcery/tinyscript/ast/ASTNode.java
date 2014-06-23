@@ -26,6 +26,11 @@ public class ASTNode {
 		this.children.addAll( children );
 	}	
 	
+	public ASTNode insertChild(int index,ASTNode child) {
+		children.add(index ,  child );
+		return child;
+	}
+	
 	public boolean visit(Function<ASTNode, Boolean> func) {
 		
 		if ( ! func.apply( this ) ) {
@@ -39,7 +44,31 @@ public class ASTNode {
 		return true;
 	}
 	
-	public void visitSimple(Consumer<ASTNode> func) 
+	public final void printPretty(String indent, boolean last)
+	{
+		System.out.print(indent);
+		if (last)
+		{
+			System.out.print("\\-");
+			indent += "  ";
+		}
+		else
+		{
+			System.out.print("|-");
+			indent += "| ";
+		}
+		System.out.println( toString() );
+
+		for (int i = 0; i < children.size() ; i++)
+			children.get(i).printPretty(indent, i == children.size() - 1);
+	}	
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName();
+	}
+	
+	public void visit(Consumer<ASTNode> func) 
 	{
 		final Function<ASTNode, Boolean> wrapper = (node) -> {
 			func.accept( node );

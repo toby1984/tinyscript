@@ -33,4 +33,8 @@ public class Identifier {
 	public String toString() {
 		return "Identifier[ "+name+" ]";
 	}
+	
+	public String getSymbol() {
+		return name;
+	}
 }

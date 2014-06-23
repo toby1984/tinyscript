@@ -1,7 +1,5 @@
 package de.codesourcery.tinyscript.ast;
 
-import java.util.Iterator;
-
 import de.codesourcery.tinyscript.OperatorType;
 
 public class OperatorNode extends ASTNode {
@@ -11,19 +9,22 @@ public class OperatorNode extends ASTNode {
 	public OperatorNode(OperatorType op) {
 		this.type =op;
 	}
+	
+	public OperatorType getOperatorType() {
+		return type;
+	}
 
 	@Override
 	public String toString() 
 	{
-		StringBuilder buffer = new StringBuilder();
-		for (Iterator<ASTNode> it = children().iterator(); it.hasNext();) 
-		{
-			final ASTNode child = it.next();
-			buffer.append( child.toString() );
-			if ( it.hasNext() ) {
-				buffer.append(",");
-			}
-		}
-		return type+"("+buffer+")";
+		return ""+type;
 	}	
+	
+	public boolean hasAllOperands() {
+		return type.getArgumentCount() == children().size();
+	}
+	
+	public String toPrettyString() {
+		return type == null ? "NULL" : type.toPrettyString();
+	}
 }

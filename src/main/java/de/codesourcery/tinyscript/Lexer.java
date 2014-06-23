@@ -9,7 +9,7 @@ public class Lexer {
 
 	private static final Pattern INTEGER = Pattern.compile("[0-9]+");
 	
-	private static final boolean DEBUG = true; 
+	private static final boolean DEBUG = false; 
 	
 	protected final Scanner scanner;
 	private final StringBuilder buffer = new StringBuilder();
@@ -18,42 +18,14 @@ public class Lexer {
 	protected final List<Token> tokens=new ArrayList<>();
 	protected boolean skipWhitespace = true;
 	
-	private final Stack<State> stack = new Stack<>();
-	
 	public Lexer(Scanner scanner) {
 		this.scanner = scanner;
-	}
-	
-	protected final class State {
-		
-		 public final int scannerOffset = scanner.offset();
-		 public final List<Token> tokens = new ArrayList<>( Lexer.this.tokens );
-		 public final boolean skipWhitespace = Lexer.this.skipWhitespace;
-		 
-		 public void apply() {
-			 scanner.reset( scannerOffset );
-			 Lexer.this.tokens.clear();
-			 Lexer.this.tokens.addAll( this.tokens );
-			 Lexer.this.skipWhitespace = this.skipWhitespace;
-		 }
-	}
-	
-	public void saveState() {
-		stack.push( new State() );
-	}
-	
-	public void recallState() {
-		stack.pop().apply();
 	}
 	
 	@Override
 	public String toString() 
 	{
 		return eof() ? "<EOF>" : tokens.get(0).toString();
-	}
-	
-	public void dropState() {
-		stack.pop();
 	}
 	
 	public Token peek() 
