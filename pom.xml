@@ -31,11 +31,12 @@
       </exclusions>
     </dependency>
 
-    <dependency>
+<dependency>
 	<groupId>asm</groupId>
-	<artifactId>asm</artifactId>
-	<version>3.1</version>
-    </dependency>
+	<artifactId>asm-all</artifactId>
+	<version>3.2</version>
+</dependency>
+
 
   </dependencies>
 

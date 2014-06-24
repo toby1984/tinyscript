@@ -99,6 +99,7 @@ public class SSARewriter
 		
 		final OperatorNode newNode = new OperatorNode(OperatorType.ASSIGNMENT);
 		final VariableNode lhs = new VariableNode( newVariable );
+		lhs.isGenerated = true;
 		newNode.add( lhs );
 		lhs.setDataType( rhs.getDataType() );
 		newNode.add( rhs );

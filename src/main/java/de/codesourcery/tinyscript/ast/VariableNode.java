@@ -6,6 +6,7 @@ import de.codesourcery.tinyscript.eval.Identifier;
 public final class VariableNode extends ASTNode {
 
 	public Identifier name;
+	public boolean isGenerated;
 	
 	public VariableNode(Identifier name) {
 		super(VARIABLE);
@@ -24,6 +25,8 @@ public final class VariableNode extends ASTNode {
 	
 	@Override
 	public VariableNode copyNodeHook() {
-		return new VariableNode(this.name);
+		final VariableNode  result = new VariableNode(this.name);
+		result.isGenerated = this.isGenerated;
+		return result;
 	}		
 }

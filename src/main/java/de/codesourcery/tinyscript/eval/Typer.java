@@ -35,9 +35,12 @@ public class Typer {
 		switch(tree.getNodeType() ) 
 		{
 			case AST:
+				Class<?> last = null;
 				for ( ASTNode child : tree.children() ) {
 					calculateTypes( child );
+					last = child.getDataType();
 				}
+				tree.setDataType( last );
 				return;
 			case BOOLEAN:
 				tree.setDataType( Boolean.class );
