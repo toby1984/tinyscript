@@ -1,4 +1,4 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 public enum TokenType 
 {
@@ -11,6 +11,7 @@ public enum TokenType
 	PARENS_CLOSE,
 	STRING_DELIMITER,
 	ESCAPE_CHARACTER,
+	SEMICOLON,
 	TEXT,
 	TRUE,
 	FALSE;

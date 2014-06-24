@@ -1,4 +1,4 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 public final class Token {
 

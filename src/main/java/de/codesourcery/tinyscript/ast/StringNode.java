@@ -1,10 +1,12 @@
 package de.codesourcery.tinyscript.ast;
 
-public class StringNode extends ASTNode {
+
+public final class StringNode extends ASTNode implements ILiteralNode {
 
 	public String value;
 
 	public StringNode(String value) {
+		super(NodeType.STRING);
 		this.value = value;
 	}
 	
@@ -12,4 +14,14 @@ public class StringNode extends ASTNode {
 	public String toString() {
 		return "String[ "+value+" ]";
 	}	
+	
+	public boolean isLiteralValue() { return true; }
+	
+	@Override
+	public String value() { return value; }		
+
+	@Override
+	public StringNode copyNodeHook() {
+		return new StringNode(this.value);
+	}		
 }

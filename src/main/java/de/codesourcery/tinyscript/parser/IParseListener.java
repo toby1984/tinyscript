@@ -1,7 +1,9 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
+
+import de.codesourcery.tinyscript.eval.OperatorType;
 
 
-public interface IParseContext<T> 
+public interface IParseListener
 {
 	public void pushValue(Object value);
 
@@ -14,4 +16,6 @@ public interface IParseContext<T>
 	public void pushClosingParens();	
 	
 	public void pushFunctionInvocation(String functionName);
+	
+	public void pushExpressionDelimiter();
 }

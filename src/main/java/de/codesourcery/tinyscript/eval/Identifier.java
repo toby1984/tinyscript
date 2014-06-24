@@ -1,8 +1,8 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.eval;
 
 import java.util.regex.Pattern;
 
-public class Identifier {
+public final class Identifier {
 
 	private static final Pattern VALID_IDENTIFIER = Pattern.compile("[_a-zA-Z]{1}[_0-9a-zA-Z]*");
 	

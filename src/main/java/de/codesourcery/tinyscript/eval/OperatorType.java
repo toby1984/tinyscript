@@ -1,4 +1,4 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.eval;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import de.codesourcery.tinyscript.ast.ASTNode;
 
 public enum OperatorType 
 {
@@ -19,6 +21,8 @@ public enum OperatorType
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) > 0 );			
 		}
+
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }
 	},
 	LT("<",2,4,DataType.NUMBER) 
 	{
@@ -26,19 +30,50 @@ public enum OperatorType
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) < 0 );
 		}		
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }	
 	},
 	GTE(">=",2,4,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) >= 0 );
-		}			
+		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }		
 	},
 	LTE("<=",2,4,DataType.BOOLEAN) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) <= 0 );
-		}			
+		}	
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }		
 	},	
+	ASSIGNMENT("=",2,0,DataType.BOOLEAN,DataType.values()) 
+	{
+		public Object apply(Object arg1,Object... additional) {
+			
+			if ( arg1 == null || !(arg1 instanceof Identifier ) ) {
+				throw new IllegalArgumentException("LHS operand of assignment needs to be an identifier");
+			}
+			if ( additional == null || additional.length != 1 ) {
+				throw new IllegalArgumentException("RHS operand of assignment needs to be exactly one value, got "+(additional== null?0:additional.length));
+			}			
+			return additional[0];
+		}
+		
+		public final Class<?> getResultType(List<ASTNode> data) 
+		{
+			return data.get(1).getDataType();
+		}
+		
+		@Override protected Class<?> calculateType(List<Class<?>> data) {
+			throw new RuntimeException("Shouldn't been called");
+		}		
+		
+		@Override
+		public Object applyHook(Object left, Object... rightArgs) 
+		{
+			throw new RuntimeException("Should never be called"); // ...because apply() is overridden
+		}
+	},
 	EQ("==",2,3,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
 
 		@Override
@@ -64,6 +99,7 @@ public enum OperatorType
 					throw new RuntimeException("Internal error,unhandled data type "+tLeft);
 			}
 		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }			
 	},
 	NEQ("!=",2,3,DataType.BOOLEAN,DataType.NUMBER,DataType.STRING) {
 
@@ -72,6 +108,7 @@ public enum OperatorType
 		{
 			return ! ((Boolean) EQ.apply(arg1,additional));
 		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }				
 	},
 	PLUS("+",2,5,DataType.NUMBER,DataType.STRING) { 
 		@Override public Object applyHook(Object left,Object... right)		
@@ -86,25 +123,44 @@ public enum OperatorType
 				return l + ((String) right[0] ) ;				
 			}
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).plus( a, b)  );
+		}		
+		@Override protected Class<?> calculateType(List<Class<?>> data) 
+		{ 
+			if ( data.get(0) == String.class || data.get(1) == String.class ) {
+				return String.class;
+			}
+			return NumericType.getWiderType( data.get(0) , data.get(1) ).getJavaType();
 		}			
 	},
 	MINUS("-",2,5,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).minus( a, b)  );
-		}		
+		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) 
+		{ 
+			return NumericType.getWiderType( data.get(0) , data.get(1) ).getJavaType();
+		}			
 	},
 	TIMES("*",2,6,DataType.NUMBER) { 
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).times( a, b)  );
-		}		
+		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) 
+		{ 
+			return NumericType.getWiderType( data.get(0) , data.get(1) ).getJavaType();
+		}			
 	},
 	DIVIDE("/",2,6,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return numericBinaryOp(left,right[0], (a,b) -> NumericType.getType(a).divide( a, b)  );
-		}		
+		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) 
+		{ 
+			return NumericType.getWiderType( data.get(0) , data.get(1) ).getJavaType();
+		}			
 	},
 	NOT("not",1,7,DataType.BOOLEAN) 
 	{
@@ -115,19 +171,22 @@ public enum OperatorType
 		public boolean isLeftAssociative() {
 			return false;
 		}		
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }			
 	},
 	AND("and",2,2,DataType.BOOLEAN) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return ((Boolean) left) && ((Boolean) right[0]);
 		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }			
 	},
 	OR("or",2,1,DataType.BOOLEAN) 
 	{
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return ((Boolean) left) || ((Boolean) right[0]);
-		}		
+		}
+		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }			
 	};
 	
 	private final String symbol;
@@ -158,12 +217,20 @@ public enum OperatorType
 		return precedence;
 	}
 	
+	public boolean isArithmeticOperator() {
+		return false;
+	}
+	
 	public String toPrettyString() {
 		return symbol;
 	}
 	
 	public int getArgumentCount() {
 		return argumentCount;
+	}
+	
+	public String getSymbol() {
+		return symbol;
 	}
 	
 	private static boolean compare(Object left,Object right,BiFunction<Object, Object , Boolean > func ) 
@@ -186,21 +253,25 @@ public enum OperatorType
 		return s.equalsIgnoreCase( symbol );
 	}
 	
-	protected final void assertSupportedArguments(Object value1,Object... values) 
+	protected final void assertSupportedArguments(Class<?>[] clazzes) 
 	{
-		final List<Object> list = new ArrayList<>();
-		list.add(value1);
-		if ( values != null ) {
-			list.addAll(Arrays.asList(values));
-		}
-		list.forEach( value -> 
-		{
-			final DataType valueType = DataType.getDataType( value );
-			if ( ! supportedTypes.contains(valueType) ) 
-			{
-				throw new IllegalArgumentException("Value "+value+" (type: "+valueType+") is not supported for operator "+this+" ( supported types are: "+supportedTypes+")");
+		int i = 0;
+		for ( Class<?> cl : clazzes) {
+			if ( ! supportedTypes.contains( DataType.getDataType( cl ) ) ) {
+				throw new IllegalArgumentException("Operand "+i+" with type "+cl+" is not supported for operator "+this+" ( supported types are: "+supportedTypes+")");
 			}
-		});
+			i++;
+		}
+	}
+	
+	protected final void assertSupportedArguments(List<DataType> list) 
+	{
+		for ( int i = 0 ; i < list.size() ; i++ ) {
+			if ( ! supportedTypes.contains( list.get(i) ) ) 
+			{
+				throw new IllegalArgumentException("Operand "+i+" with type "+list.get(i)+" is not supported for operator "+this+" ( supported types are: "+supportedTypes+")");
+			}
+		}
 	}
 	
 	public final Object apply(List<Object> arguments) {
@@ -213,13 +284,21 @@ public enum OperatorType
 		throw new IllegalArgumentException("Operator requires "+argumentCount+" arguments, got "+arguments);
 	}
 	
-	public final Object apply(Object arg1,Object... additional) 
+	public Object apply(Object arg1,Object... additional) 
 	{
 		int count = 1 + ( additional != null ? additional.length : 0);
 		if ( count != argumentCount ) {
 			throw new UnsupportedOperationException("Operator "+this+" cannot be called with "+count+" arguments (requires "+argumentCount+")");
 		}
-		assertSupportedArguments(arg1, additional);
+		final Class<?>[] types = new Class<?>[count];
+		int i = 0;
+		types[i++]= arg1.getClass();
+		if ( additional != null ) {
+			for ( Object obj : additional) {
+				types[i++] = obj.getClass();
+			}
+		}
+		assertSupportedArguments(types);
 		return applyHook(arg1,additional);
 	}	
 	
@@ -237,5 +316,42 @@ public enum OperatorType
 	public static boolean mayBeOperator(String input) {
 		final String s = input.toLowerCase();
 		return Arrays.stream( values() ).anyMatch( operator -> operator.symbol.startsWith(s) );
+	}
+	
+	protected abstract Class<?> calculateType(List<Class<?>> data);
+	
+	public Class<?> getResultType(List<ASTNode> data) {
+
+		if ( data.size() != getArgumentCount() ) {
+			throw new IllegalArgumentException("Operator "+this+" requires "+getArgumentCount()+" arguments, got "+data.size());			
+		}
+		
+		final Class<?>[] types = new Class<?>[ data.size() ];
+		int i = 0;
+		for ( ASTNode n : data ) 
+		{
+			if ( n.getDataType() == null ) {
+				throw new IllegalArgumentException("Node "+n+" has no data type set");
+			}
+			System.out.println("Node "+n+" has data type "+n.getDataType());
+			types[i++]=n.getDataType();
+		}
+		assertSupportedArguments( types );
+		return calculateType(Arrays.asList( types ) );
+	}
+	
+	protected final DataType getDataType(ASTNode node) 
+	{
+		switch(node.getNodeType()) 
+		{
+			case BOOLEAN:
+				return DataType.BOOLEAN;
+			case NUMBER:
+				return DataType.NUMBER;
+			case STRING:
+				return DataType.STRING;
+			default:
+				throw new RuntimeException("Unhandled node: "+node);
+		}
 	}
 }

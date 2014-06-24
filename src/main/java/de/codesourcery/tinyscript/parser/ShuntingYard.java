@@ -1,11 +1,12 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 import java.util.Stack;
 
-import de.codesourcery.tinyscript.ExpressionToken.ExpressionTokenType;
 import de.codesourcery.tinyscript.ast.ASTNode;
 import de.codesourcery.tinyscript.ast.ExpressionNode;
 import de.codesourcery.tinyscript.ast.OperatorNode;
+import de.codesourcery.tinyscript.eval.OperatorType;
+import de.codesourcery.tinyscript.parser.ExpressionToken.ExpressionTokenType;
 
 /**
  * This class implements Dijkstra's 'Shunting yard' algorithm 
@@ -171,7 +172,7 @@ When there are no more tokens to read:
         {
             final OperatorType o1 = ((OperatorNode) tok1.getToken()).getOperatorType();
             
-        	System.out.println("**** Pushing "+( o1.isLeftAssociative() ? "left" : "right")+"-associate operator "+o1.toPrettyString()+" with precedence "+o1.getPrecedence());
+        	// System.out.println("**** Pushing "+( o1.isLeftAssociative() ? "left" : "right")+"-associate operator "+o1.toPrettyString()+" with precedence "+o1.getPrecedence());
 
             while ( ! stack.isEmpty() && stack.peek().isOperator() ) 
             {

@@ -1,11 +1,6 @@
-package de.codesourcery.tinyscript.visitors;
+package de.codesourcery.tinyscript.parser;
 
-import de.codesourcery.tinyscript.ExpressionToken;
-import de.codesourcery.tinyscript.ExpressionToken.ExpressionTokenType;
-import de.codesourcery.tinyscript.IParseContext;
-import de.codesourcery.tinyscript.Identifier;
-import de.codesourcery.tinyscript.OperatorType;
-import de.codesourcery.tinyscript.ShuntingYard;
+import de.codesourcery.tinyscript.ast.AST;
 import de.codesourcery.tinyscript.ast.ASTNode;
 import de.codesourcery.tinyscript.ast.BooleanNode;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;
@@ -13,14 +8,19 @@ import de.codesourcery.tinyscript.ast.NumberNode;
 import de.codesourcery.tinyscript.ast.OperatorNode;
 import de.codesourcery.tinyscript.ast.StringNode;
 import de.codesourcery.tinyscript.ast.VariableNode;
+import de.codesourcery.tinyscript.eval.Identifier;
+import de.codesourcery.tinyscript.eval.OperatorType;
+import de.codesourcery.tinyscript.parser.ExpressionToken.ExpressionTokenType;
 
-public class ShuntingYardVisitor implements IParseContext<ASTNode> {
+public class ASTBuilder implements IParseListener {
 
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	
-	private final ShuntingYard yard = new ShuntingYard();
+	private ShuntingYard yard = new ShuntingYard();
 	
-	public ShuntingYardVisitor() {
+	private final AST ast = new AST();
+	
+	public ASTBuilder() {
 	}
 	
 	private void debug(String message) {
@@ -29,9 +29,21 @@ public class ShuntingYardVisitor implements IParseContext<ASTNode> {
 		}
 	}
 	
-	public ASTNode getResult() 
+	public AST getResult() 
 	{
-		return yard.getResult( -1 );
+		if ( ! yard.isEmpty() ) {
+			pushExpressionDelimiter();
+		}
+		return ast;
+	}
+	
+	public void pushExpressionDelimiter() 
+	{
+		ASTNode result = yard.getResult(-1);
+		if (result != null ) {
+			ast.add( result );
+		}
+		yard = new ShuntingYard();
 	}
 	
 	@Override

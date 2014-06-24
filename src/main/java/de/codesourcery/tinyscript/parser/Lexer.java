@@ -1,9 +1,11 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 import java.util.regex.Pattern;
+
+import de.codesourcery.tinyscript.eval.Identifier;
+import de.codesourcery.tinyscript.eval.OperatorType;
 
 public class Lexer {
 
@@ -155,6 +157,7 @@ loop:
 			final Token newToken;
 			switch(c) 
 			{
+		        case ';': newToken = newToken(TokenType.SEMICOLON,c,scanner.offset()-1); break;						
 			    case '\\': newToken = newToken(TokenType.ESCAPE_CHARACTER,c,scanner.offset()-1); break;					
 				case '.':  newToken = newToken(TokenType.DOT,c,scanner.offset()-1); break;						
 				case '(':  newToken = newToken(TokenType.PARENS_OPEN,c,scanner.offset()-1); break;					

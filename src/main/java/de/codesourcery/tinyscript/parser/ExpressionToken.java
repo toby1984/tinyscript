@@ -1,4 +1,4 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 import de.codesourcery.tinyscript.ast.ASTNode;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;

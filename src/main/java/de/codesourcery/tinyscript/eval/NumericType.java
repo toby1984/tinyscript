@@ -1,64 +1,88 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.eval;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 public enum NumericType
 {
-	DOUBLE(Double.class,true,8) {
+	DOUBLE(true,8,Double.class,Double.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Double) a) + ((Double) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Double) a) - ((Double) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Double) a) * ((Double) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Double) a) / ((Double) b ); }
 		@Override public int compareHook(Object a, Object b) { return Double.compare( (Double) a, (Double) b); }		
+		@Override public Class<?> getJavaType() { return Double.class; }
 	},
-	FLOAT(Float.class,true,4) {
+	FLOAT(true,4,Float.class,Float.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Float) a) + ((Float) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Float) a) - ((Float) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Float) a) * ((Float) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Float) a) / ((Float) b ); }	
 		@Override public int compareHook(Object a, Object b) { return Float.compare( (Float) a, (Float) b); }			
+		@Override public Class<?> getJavaType() { return Float.class; }
 	},
-	LONG(Long.class,false,8) {
+	LONG(false,8,Long.class,Long.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Long) a) + ((Long) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Long) a) - ((Long) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Long) a) * ((Long) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Long) a) / ((Long) b ); }		
-		@Override public int compareHook(Object a, Object b) { return Long.compare( (Long) a, (Long) b); }				
+		@Override public int compareHook(Object a, Object b) { return Long.compare( (Long) a, (Long) b); }		
+		@Override public Class<?> getJavaType() { return Long.class; }		
 	},
-	INT(Integer.class,false,4) {
+	INT(false,4,Integer.class,Integer.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Integer) a) + ((Integer) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Integer) a) - ((Integer) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Integer) a) * ((Integer) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Integer) a) / ((Integer) b ); }		
-		@Override public int compareHook(Object a, Object b) { return Integer.compare( (Integer) a, (Integer) b); }					
+		@Override public int compareHook(Object a, Object b) { return Integer.compare( (Integer) a, (Integer) b); }		
+		@Override public Class<?> getJavaType() { return Integer.class; }				
 	},		
-	SHORT(Short.class,false,2) {
+	SHORT(false,2,Short.class,Short.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Short) a) + ((Short) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Short) a) - ((Short) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Short) a) * ((Short) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Short) a) / ((Short) b ); }		
-		@Override public int compareHook(Object a, Object b) { return Short.compare( (Short) a, (Short) b); }				
+		@Override public int compareHook(Object a, Object b) { return Short.compare( (Short) a, (Short) b); }			
+		@Override public Class<?> getJavaType() { return Short.class; }	
 	},
-	BYTE(Byte.class,false,1) {
+	BYTE(false,1,Byte.class,Byte.TYPE) {
 		@Override public Object plus(Object a, Object b) { return   ((Byte) a) + ((Byte) b ); }
 		@Override public Object minus(Object a, Object b) {return   ((Byte) a) - ((Byte) b ); }
 		@Override public Object times(Object a, Object b) { return  ((Byte) a) * ((Byte) b ); }
 		@Override public Object divide(Object a, Object b) { return ((Byte) a) / ((Byte) b ); }		
-		@Override public int compareHook(Object a, Object b) { return Byte.compare( (Byte) a, (Byte) b); }			
+		@Override public int compareHook(Object a, Object b) { return Byte.compare( (Byte) a, (Byte) b); }		
+		@Override public Class<?> getJavaType() { return Byte.class; }			
 	};
 	
-	private final Class<?> clazz;
+	private final Class<?>[] clazzes;
 	private final boolean isFloatingPoint;
 	private final int size;
 	
-	private NumericType(Class<?> clazz,boolean isFloatingPoint,int size) {
-		this.clazz=clazz;
+	private NumericType(boolean isFloatingPoint,int size,Class<?>... clazzes) {
+		this.clazzes=clazzes;
 		this.isFloatingPoint=isFloatingPoint;
 		this.size = size;
 	}
 	
+	private boolean matches(Class<?> clazz) {
+		for ( Class<?> cl : this.clazzes ) {
+			if ( cl == clazz ) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static NumericType getType(Class<?> clazz) {
+		Optional<NumericType> result = Arrays.stream( values() ).filter( type -> type.matches(clazz) ).findFirst();
+		if ( ! result.isPresent() ) {
+			throw new IllegalArgumentException("Found no numeric type for "+clazz);
+		}
+		return result.get();
+	}	
+	
 	public static NumericType getType(Object o) {
-		return Arrays.stream( values() ).filter( type -> type.clazz == o.getClass() ).findFirst().get();
+		return getType( o.getClass() );
 	}
 	
 	public abstract Object plus(Object a,Object b);
@@ -105,7 +129,7 @@ public enum NumericType
 		throw new RuntimeException("Internal error,unreachable code reached");
 	}
 	
-	public static NumericType getWiderType(Object a,Object b) 
+	public static NumericType getWiderType(Class<?> a,Class<?> b) 
 	{
 		final NumericType typeA = getType(a);
 		final NumericType typeB = getType(b);
@@ -116,6 +140,11 @@ public enum NumericType
 			return typeA.size > typeB.size ? typeA : typeB;
 		}
 		return typeA.isFloatingPoint ? typeA : typeB;
+	}
+	
+	public static NumericType getWiderType(Object a,Object b) 
+	{
+		return getWiderType(a.getClass() , b.getClass() );
 	}
 
 	public static boolean eq(Object a, Object b) 
@@ -129,5 +158,28 @@ public enum NumericType
 			right = type.convert( right );
 		}
 		return left.equals(right);		
+	}
+	
+	public static NumericType fromJavaType(Class<?> clazz) {
+		for ( NumericType t : values() ) {
+			if ( t.getJavaType().isAssignableFrom( clazz ) ) {
+				return t;
+			}
+		}
+		throw new IllegalArgumentException("Found no NumericType that is assignable from "+clazz);
+	}
+
+	public abstract Class<?> getJavaType();
+	
+	public boolean isAssignableFrom(Class<?> rhs) {
+		
+		NumericType rhsType = fromJavaType(rhs);
+		if ( isFloatingPoint ) { // float = float / double = float are OK
+			return this.size >= rhsType.size;
+		}
+		if ( rhsType.isFloatingPoint ) { // int = float requires explicit conversion
+			return false;
+		}
+		return this.size >= rhsType.size;
 	}
 }

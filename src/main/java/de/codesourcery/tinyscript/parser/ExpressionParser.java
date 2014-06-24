@@ -1,24 +1,27 @@
-package de.codesourcery.tinyscript;
+package de.codesourcery.tinyscript.parser;
 
 import java.text.ParseException;
 
-public class ExpressionParser<T> {
+import de.codesourcery.tinyscript.eval.Identifier;
+import de.codesourcery.tinyscript.eval.OperatorType;
+
+public class ExpressionParser {
 
 	public static final boolean DEBUG = false;
-	
+
 	private Lexer lexer;
-	private IParseContext<T> context;
+	private IParseListener parseListener;
 
 	private int lastErrorOffset = -1;
 	private String lastErrorMsg;	
 
 	public ExpressionParser() {
 	}
-	
-	public void parse(Lexer lexer,IParseContext<T> context) throws ParseException 
+
+	public void parse(Lexer lexer,IParseListener context) throws ParseException 
 	{
 		this.lexer = lexer;
-		this.context = context;
+		this.parseListener = context;
 
 		lastErrorOffset = -1;
 		lastErrorMsg = null;	
@@ -27,7 +30,7 @@ public class ExpressionParser<T> {
 			throw new ParseException("Syntax error: "+lastErrorMsg+" at offset "+lastErrorOffset,lastErrorOffset);
 		}
 	}
-	
+
 	private boolean success(String s) {
 		if ( DEBUG ) {
 			System.out.println("* ");
@@ -50,13 +53,18 @@ public class ExpressionParser<T> {
 	private boolean expression() 
 	{
 		boolean success = false;
+		if ( consume(TokenType.SEMICOLON ) ) 
+		{
+			parseListener.pushExpressionDelimiter();
+			return true;
+		}
 		if ( parseAtom() ) 
 		{
 			success = true;
 			while ( lexer.peek(TokenType.OPERATOR )  ) 
 			{
 				final OperatorType operator = OperatorType.getExactMatch( lexer.next().text );
-				context.pushOperator( operator );
+				parseListener.pushOperator( operator );
 				if ( ! parseAtom() ) {
 					break;
 				}
@@ -65,10 +73,10 @@ public class ExpressionParser<T> {
 		else if ( lexer.peek(TokenType.OPERATOR ) ) 
 		{
 			success = true;			
-			
+
 			do {
 				final OperatorType operator = OperatorType.getExactMatch( lexer.next().text );
-				context.pushOperator( operator );
+				parseListener.pushOperator( operator );
 				if ( ! parseAtom() ) {
 					break;
 				}
@@ -76,13 +84,13 @@ public class ExpressionParser<T> {
 		}
 		return success;
 	}
-	
+
 	private boolean parseAtom() 
 	{
 		if ( parseFunctionInvocation() ) {
 			return true;
 		}
-		
+
 		if ( parseIdentifier() ) {
 			return true;
 		}
@@ -93,10 +101,11 @@ public class ExpressionParser<T> {
 
 		if ( consume( TokenType.PARENS_OPEN ) ) 
 		{
-			this.context.pushOpeningParens();		
+			this.parseListener.pushOpeningParens();		
+
 			if ( expression() && consume(TokenType.PARENS_CLOSE) ) 
 			{
-				this.context.pushClosingParens();
+				this.parseListener.pushClosingParens();
 				return success(" '(' expr ')' ");
 			}
 			return false;
@@ -108,7 +117,7 @@ public class ExpressionParser<T> {
 	{
 		if ( peek(TokenType.IDENTIFIER ) ) {
 			Identifier id = new Identifier( lexer.next().text );
-			context.pushValue( id );
+			parseListener.pushValue( id );
 			return success("Identifier: "+id);
 		}
 		return false;
@@ -146,7 +155,7 @@ public class ExpressionParser<T> {
 					return error("Unterminated string");
 				}
 				consume(TokenType.STRING_DELIMITER);
-				context.pushValue( buffer.toString() );
+				parseListener.pushValue( buffer.toString() );
 			} finally {
 				lexer.setSkipWhitespace(oldWhitespace);
 			}
@@ -158,11 +167,11 @@ public class ExpressionParser<T> {
 	private boolean parseBoolean() 
 	{
 		if ( consume(TokenType.TRUE) ) {
-			context.pushValue( Boolean.TRUE );
+			parseListener.pushValue( Boolean.TRUE );
 			return success("Boolean: TRUE");
 		}
 		if ( consume(TokenType.FALSE) ) {
-			context.pushValue( Boolean.FALSE );
+			parseListener.pushValue( Boolean.FALSE );
 			return success("Boolean: FALSE");			
 		}		
 		return false;
@@ -175,16 +184,23 @@ public class ExpressionParser<T> {
 			final String identifier = lexer.next(TokenType.IDENTIFIER).text;
 			if ( consume( TokenType.PARENS_OPEN ) ) 
 			{
-				context.pushFunctionInvocation(identifier);					
-				context.pushOpeningParens();
+				parseListener.pushFunctionInvocation(identifier);					
+				parseListener.pushOpeningParens();
+
+				if ( consume(TokenType.PARENS_CLOSE ) ) 
+				{
+					parseListener.pushClosingParens();
+					return success("Function invocation: "+identifier+"(...)");					 
+				}
+
 				if ( parseArgumentList() && consume( TokenType.PARENS_CLOSE ) ) 
 				{
-					context.pushClosingParens();
+					parseListener.pushClosingParens();
 					return success("Function invocation: "+identifier+"(...)");
 				}
 				return false;
 			}
-			context.pushValue( new Identifier(identifier) );
+			parseListener.pushValue( new Identifier(identifier) );
 			return true;
 		}
 		return false;
@@ -198,7 +214,7 @@ public class ExpressionParser<T> {
 			result = true;
 			while (consume(TokenType.COMMA)) 
 			{
-				context.pushArgumentDelimiter();
+				parseListener.pushArgumentDelimiter();
 				if ( ! expression() ) 
 				{
 					result = false;
@@ -240,9 +256,9 @@ public class ExpressionParser<T> {
 					return error("Invalid floating point number");
 				}
 				num += "."+lexer.next().text;
-				context.pushValue( Double.parseDouble( num ) );
+				parseListener.pushValue( Double.parseDouble( num ) );
 			} else {
-				context.pushValue( Integer.parseInt( num ) );
+				parseListener.pushValue( Integer.parseInt( num ) );
 			}
 			return success("Number "+num);
 		}
@@ -261,7 +277,7 @@ public class ExpressionParser<T> {
 		}
 		return false;
 	}
-	
+
 	private boolean errorLater(String message) 
 	{
 		if ( lexer.offset() > lastErrorOffset ) 

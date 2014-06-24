@@ -2,13 +2,14 @@ package de.codesourcery.tinyscript.ast;
 
 import java.util.Iterator;
 
-import de.codesourcery.tinyscript.Identifier;
+import de.codesourcery.tinyscript.eval.Identifier;
 
-public class FunctionCallNode extends ASTNode {
+public final class FunctionCallNode extends ASTNode {
 
 	public final Identifier functionName;
 	
 	public FunctionCallNode(Identifier functionName) {
+		super(NodeType.FUNCTION_CALL);
 		this.functionName = functionName;
 	}
 	
@@ -29,5 +30,15 @@ public class FunctionCallNode extends ASTNode {
 			}
 		}
 		return functionName.getSymbol()+"("+buffer+")";
+	}
+
+	@Override
+	public boolean isLiteralValue() {
+		return false;
+	}
+
+	@Override
+	public FunctionCallNode copyNodeHook() {
+		return new FunctionCallNode(this.functionName);
 	}	
 }
