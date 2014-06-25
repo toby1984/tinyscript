@@ -35,7 +35,7 @@ public class MethodBodyWriter
 			return name;
 		}
 		
-		protected void genArray(List<Object> values,Class<?> componentType, MethodVisitor methodVisitor) {
+		protected void newArray(List<ASTNode> values,Class<?> componentType, MethodVisitor methodVisitor) {
 			/*
 			 *  0: iconst_3      
 			 *  1: anewarray     #20                 // class java/lang/Object
@@ -64,11 +64,11 @@ public class MethodBodyWriter
 			}
 
 			int index = 0;
-			for ( Object value : values ) 
+			for ( ASTNode node : values ) 
 			{
 				methodVisitor.visitInsn(Opcodes.DUP); // array ref
 				genValue( index++ , Integer.class , methodVisitor ); // index
-				genValue( value , value.getClass(), true , methodVisitor ); // value
+				generateMethodBody(node, methodVisitor );
 				methodVisitor.visitInsn( Opcodes.AASTORE );
 			}
 		}
@@ -101,11 +101,11 @@ public class MethodBodyWriter
 				generateConditional(branchOnOperandsOpcode,methodVisitor);	
 			} else if ( targetType == Double.class ) 
 			{
-				// TODO: DCMPG or DCMPL only differ in their treatment of NaN
+				// TODO: DCMPG or DCMPL only differ in their treatment of NaN...
 				methodVisitor.visitInsn( Opcodes.DCMPG );	
 				generateConditional(branchOnResultOpcode,methodVisitor);					
 			}  else if ( targetType == Float.class ) {
-				// TODO: FCMPG or FCMPL only differ in their treatment of NaN
+				// TODO: FCMPG or FCMPL only differ in their treatment of NaN...
 				methodVisitor.visitInsn( Opcodes.FCMPG );	
 				generateConditional(branchOnResultOpcode,methodVisitor);							
 			} else {
@@ -437,7 +437,7 @@ public class MethodBodyWriter
 		}
 		if ( convertToObject ) {
 			box( targetType , visitor );
-			return toObjectType( targetType );
+			return getBoxedType( targetType );
 		}		
 		return getUnboxedType( targetType );
 	}	
@@ -535,15 +535,6 @@ public class MethodBodyWriter
 				);
 
 		methodVisitor.visitTypeInsn( Opcodes.CHECKCAST , targetClass.getName().replace(".","/" ) );			
-	}
-	
-	protected static void outputTypeConversion(Class<?> currentlyOnStack,Class<?> requiredType) {
-		if ( currentlyOnStack == requiredType ) {
-			return;
-		}
-		if ( currentlyOnStack.isPrimitive() && ! requiredType.isPrimitive() ) {
-			
-		}
 	}
 	
 	public static Class<?> box(Class<?> currentType,MethodVisitor mv) 
@@ -648,7 +639,7 @@ public class MethodBodyWriter
 		}
 	}
 	
-	public static Class<?> toObjectType(Class<?> cl) 
+	public static Class<?> getBoxedType(Class<?> cl) 
 	{
 		if ( ! cl.isPrimitive() ) {
 			return cl;
@@ -668,7 +659,7 @@ public class MethodBodyWriter
 		} else if ( cl == Double.TYPE ) {
 			return Double.class;
 		} else {
-			throw new IllegalArgumentException("No primitive available for "+cl.getName());
+			throw new IllegalArgumentException("No boxed type available for "+cl.getName());
 		}
 	}	
 }
