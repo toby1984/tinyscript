@@ -154,7 +154,7 @@ public class ByteCodeCompilerTest extends TestCase {
 		target = new TestTarget();
 		scope = null;
 		
-		ExpressionCompiler comp = new ExpressionCompiler("TestClass");
+		ByteCodeWriter comp = new ByteCodeWriter("TestClass");
 		
 		final AST ast = parse( expression );
 		

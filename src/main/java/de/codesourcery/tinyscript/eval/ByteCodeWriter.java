@@ -12,14 +12,14 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import de.codesourcery.tinyscript.ast.AST;
 
-public class ExpressionCompiler {
+public class ByteCodeWriter {
 
 	private final String className;
 	private ClassVisitor classWriter;
 
 	private MethodVisitor mv;
 
-	public ExpressionCompiler(String className) {
+	public ByteCodeWriter(String className) {
 		this.className = convertClassName(className);
 	}
 
