@@ -39,7 +39,7 @@ public enum OperatorType
 		}
 		@Override protected Class<?> calculateType(List<Class<?>> data) { return Boolean.class; }		
 	},
-	LTE("<=",2,4,DataType.BOOLEAN) {
+	LTE("<=",2,4,DataType.NUMBER) {
 		@Override public Object applyHook(Object left,Object... right)		
 		{
 			return compare(left,right[0], (a,b) -> NumericType.compare(a,b) <= 0 );

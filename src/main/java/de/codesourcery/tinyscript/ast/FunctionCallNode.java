@@ -1,5 +1,6 @@
 package de.codesourcery.tinyscript.ast;
 
+import java.lang.reflect.Method;
 import java.util.Iterator;
 
 import de.codesourcery.tinyscript.eval.Identifier;
@@ -7,6 +8,8 @@ import de.codesourcery.tinyscript.eval.Identifier;
 public final class FunctionCallNode extends ASTNode {
 
 	public final Identifier functionName;
+	
+	public Method targetMethod; // populated by Typer
 	
 	public FunctionCallNode(Identifier functionName) {
 		super(NodeType.FUNCTION_CALL);
@@ -39,6 +42,8 @@ public final class FunctionCallNode extends ASTNode {
 
 	@Override
 	public FunctionCallNode copyNodeHook() {
-		return new FunctionCallNode(this.functionName);
+		FunctionCallNode result = new FunctionCallNode(this.functionName);
+		result.targetMethod = targetMethod;
+		return result;
 	}	
 }

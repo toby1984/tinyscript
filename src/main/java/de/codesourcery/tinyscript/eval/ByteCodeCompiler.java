@@ -34,9 +34,8 @@ public class ByteCodeCompiler {
 		try {
 			startMethod();
 			
-			final StackBuilder builder = new StackBuilder(targetClass);
-			builder.buildStack( ssa );
-			final Class<?> returnType = builder.output( mv );
+			final MethodBodyWriter builder = new MethodBodyWriter(targetClass);
+			final Class<?> returnType = builder.generateMethodBody( ssa, mv );
 			System.out.println("==> end method: "+returnType+" (is_primitive: "+returnType.isPrimitive()+")");
 			endMethod(returnType);
 		} 
@@ -101,41 +100,15 @@ public class ByteCodeCompiler {
 	{
 		if ( returnType != null ) 
 		{
-			if ( returnType.isPrimitive() ) {
-				outputConversionToObject( StackBuilder.toObjectType( returnType ) , mv);
-			}
+			MethodBodyWriter.box( returnType ,  mv );
 			mv.visitInsn(Opcodes.ARETURN);
 		} else {
-			// void method, just return NULL
+			// void method, simply return NULL
 			mv.visitInsn(Opcodes.ACONST_NULL);
 			mv.visitInsn(Opcodes.ARETURN);			
 		}
 		mv.visitMaxs(0, 0);		
 		mv.visitEnd(); // end of method
 		mv.visitEnd(); // end of class
-	}
-
-	public static void outputConversionToObject(Class<?> targetType,MethodVisitor mv) 
-	{
-		if ( targetType == String.class || targetType == Object.class ) 
-		{
-			// nothing to do here
-		} else if ( targetType == Integer.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;" );
-		} else if ( targetType == Long.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;" );
-		} else if ( targetType == Short.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(J)Ljava/lang/Short;" );	
-		} else if ( targetType == Byte.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(J)Ljava/lang/Byte;" );				
-		} else if ( targetType == Float.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;" );
-		} else if ( targetType == Double.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;" );
-		} else if ( targetType == Boolean.class) {
-			mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;" );
-		} else {
-			throw new RuntimeException("Don't know how to load "+targetType);
-		}		
 	}
 }

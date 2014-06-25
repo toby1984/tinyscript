@@ -10,10 +10,8 @@ public class TestClass extends CompiledExpression<Integer> {
 	@Override
 	public Object apply() 
 	{
-		return target.byteValue();
-	}
-	
-	protected Object myMethod(String name,Object[] args) {
-		return null;
-	}
+		boolean a = true;
+		boolean b = false;
+		return ! a || b;
+	}	
 }

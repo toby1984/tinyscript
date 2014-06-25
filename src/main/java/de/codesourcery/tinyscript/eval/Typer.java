@@ -59,8 +59,10 @@ public class Typer {
 						}
 						types[i++] = child.getDataType();
 					}
+					
 					final FunctionCallNode fn = (FunctionCallNode) tree;
 					final Method method = Evaluator.findMethod( fn.getFunctionName() , types , targetClass.getMethods() );
+					fn.targetMethod = method;
 					returnType = method.getReturnType();
 					
 					if ( returnType != Void.class && returnType != Void.TYPE ) 

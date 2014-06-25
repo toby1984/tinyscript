@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 import de.codesourcery.tinyscript.ast.AST;
@@ -17,6 +19,8 @@ import de.codesourcery.tinyscript.parser.Scanner;
 
 public class ByteCodeCompilerTest extends TestCase {
 
+	private static final Integer VALUE1 = new Integer(3);
+	private static final Integer VALUE2 = new Integer(7);
 	private IScope scope;
 	private Object target;
 	
@@ -53,33 +57,106 @@ public class ByteCodeCompilerTest extends TestCase {
 				return readVariable( name ).getClass();
 			}
 		};
-	
 	}
 	
 	public static final class TestTarget {
 		
 		public Integer value1() {
-			return 1;
+			return VALUE1;
 		}
 		
 		public Integer value2() {
-			return 41;
+			return VALUE2;
 		}
 		
-		public Integer testMethod(Integer a,Integer b) {
+		public Integer subInteger1(Integer a,Integer b) {
 			System.out.println("==== Test method invoked ===");
 			return a-b;
 		}		
+		
+		public int subInteger2(int a,int b) {
+			System.out.println("==== Test method invoked ===");
+			return a-b;
+		}	
+		
+		public int subInteger3(int a,Integer b) {
+			System.out.println("==== Test method invoked ===");
+			return a-b;
+		}	
+		
+		public Integer subInteger4(int a,int b) {
+			System.out.println("==== Test method invoked ===");
+			return a-b;
+		}			
 	}
 	
-	public void test() throws Exception {
+	public void test1() throws Exception {
+		assertEquals( new Integer(24) , debug("12+((1+3)*3)") );
+		assertEquals( new Integer(12) , debug("12") );
+		assertEquals( new Integer(15) , debug("(1+4)*3") );
+		assertEquals( new Integer(13) , debug("1+4*3") );
+		assertEquals( new Integer(15) , debug("3*(1+4)") );
+		assertEquals( new Integer(13) , debug("4*3+1") );
+		assertEquals( new Integer(4) , debug("7-3" ) );
+		assertEquals( VALUE1 , debug("value1()" ) );
+		assertEquals( VALUE2 , debug("value2()" ) );
+		assertEquals( VALUE1-VALUE2 , debug("subInteger1(value1(),value2())" ) );
+		assertEquals( VALUE1-VALUE2 , debug("subInteger2(value1(),value2())" ) );
+		assertEquals( VALUE1-VALUE2 , debug("subInteger3(value1(),value2())" ) );
+		assertEquals( VALUE1-VALUE2 , debug("subInteger4(value1(),value2())" ) );
 		
+		assertEquals(Boolean.TRUE , debug("1 < 2" ) );
+		assertEquals(Boolean.TRUE , debug("1 <= 2" ) );
+		assertEquals(Boolean.TRUE , debug("2 > 1" ) );
+		assertEquals(Boolean.TRUE , debug("2 >= 1" ) );
+		assertEquals(Boolean.TRUE , debug("1 == 1" ) );
+		assertEquals(Boolean.TRUE , debug("1 == 1" ) );
+		
+		assertEquals(Boolean.FALSE , debug("1 > 2" ) );
+		assertEquals(Boolean.FALSE , debug("1 >= 2" ) );
+		assertEquals(Boolean.FALSE , debug("2 < 1" ) );
+		assertEquals(Boolean.FALSE , debug("2 <= 1" ) );
+		assertEquals(Boolean.FALSE , debug("1 != 1" ) );
+		assertEquals(Boolean.FALSE , debug("1 == 2" ) );		
+		
+		assertEquals(Boolean.FALSE , debug("false" ) );
+		assertEquals(Boolean.TRUE , debug("true" ) );
+		
+		assertEquals(Boolean.TRUE , debug("NOT false" ) );
+		assertEquals(Boolean.FALSE, debug("NOT true" ) );
+		
+		doTestBooleanOperators( "${A} OR ${B}", (a,b) -> a || b );
+		doTestBooleanOperators( "${A} AND ${B}", (a,b) -> a && b );
+		doTestBooleanOperators( "NOT ${A} OR ${B}", (a,b) -> ! a || b );	
+	}			
+	
+	public void testBroken() throws Exception {
+
+	}
+	
+	private void doTestBooleanOperators(String expr,BiFunction<Boolean, Boolean, Boolean> block) throws Exception {
+		for ( int i = 0 ; i <= 1 ; i++) 
+		{
+			for ( int j = 0 ; j <= 1 ; j++) 
+			{
+				String tmpExpr = expr.replaceAll( Pattern.quote("${A}"), i == 0 ? "false" : "true");
+				tmpExpr = tmpExpr.replaceAll( Pattern.quote("${B}"), j == 0 ? "false" : "true");
+				assertEquals( block.apply( Boolean.valueOf( i==1 ), Boolean.valueOf( j==1 ) ) , debug( tmpExpr ) );
+			}
+		}
+	}
+	
+	private Object debug(String expression) throws Exception 
+	{
+		System.out.println("###########################################");
+		System.out.println("### Testing: "+expression);
+		System.out.println("###########################################");
 		target = new TestTarget();
 		scope = null;
 		
 		ByteCodeCompiler comp = new ByteCodeCompiler("TestClass");
 		
-		final AST ast = parse("testMethod(1+3,2+3)");
+		final AST ast = parse( expression );
 		
 		ast.prettyPrint();
 		
@@ -91,7 +168,9 @@ public class ByteCodeCompilerTest extends TestCase {
 		System.out.println( data.length+" bytes written.");
 
 		final CompiledExpression<TestTarget> instance = compile( data , (TestTarget) target , TestTarget.class , scope );
-		System.out.println("RESULT = "+instance.apply());
+		Object result = instance.apply();
+		System.out.println("RESULT = "+result+" ("+(result==null?"NULL":result.getClass().getName())+")");
+		return result;
 	}
 	
 	private <T> CompiledExpression<T> compile(byte[] bytecode,T target,Class<T> targetClass,IScope scope) throws Exception 
@@ -133,10 +212,6 @@ public class ByteCodeCompilerTest extends TestCase {
 	
 	private AST parse(String expression) {
 		return parse(expression,false);
-	}
-	
-	private AST transform(AST ast) {
-		return new SSARewriter().rewriteAST( ast );
 	}
 	
 	private AST parse(String expression,boolean resolveVariables) {
@@ -184,7 +259,8 @@ public class ByteCodeCompilerTest extends TestCase {
 		
 		simplifier.setResolveVariables(resolveVariables);
 		
-		simplifier.setFoldConstants( false );
+		simplifier.setFoldConstants( false ); // disable constant folding for testing purposes
+		
 		AST ast = (AST) simplifier.simplify( result ,  target );
 		new Typer(scope,target == null ? Object.class : target.getClass() ).type( ast );
 		return ast;
