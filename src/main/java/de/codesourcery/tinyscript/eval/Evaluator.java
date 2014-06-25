@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import de.codesourcery.tinyscript.ast.ASTNode;
-import de.codesourcery.tinyscript.ast.FastMethodInvocation;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;
 import de.codesourcery.tinyscript.ast.ILiteralNode;
 import de.codesourcery.tinyscript.ast.OperatorNode;
@@ -51,6 +50,11 @@ public class Evaluator {
 	
 	public static final long hash(Identifier methodName,List<Object> arguments) 
 	{
+		return hash(methodName.getSymbol() , arguments );
+	}
+	
+	public static final long hash(String methodName,List<Object> arguments) 
+	{
 		int result = 31 + methodName.hashCode();
 		final int len = arguments.size();
 		for ( int i = 0 ; i < len ; i++) 
@@ -60,6 +64,18 @@ public class Evaluator {
 		}
 		return result;		
 	}
+	
+	public static final long hash(String methodName,Object[] arguments) 
+	{
+		int result = 31 + methodName.hashCode();
+		final int len = arguments.length;
+		for ( int i = 0 ; i < len ; i++) 
+		{
+			final Class<?> clazz = arguments[i].getClass();
+			result = 31 * result + clazz.getName().hashCode();
+		}
+		return result;		
+	}	
 	
 	public void setTarget(Object target) 
 	{
@@ -113,8 +129,6 @@ public class Evaluator {
 					return evaluate( node.child(0) );
 				}
 				throw new IllegalArgumentException("Don't know how to evaluate AST with "+node.getChildCount()+" node");
-			case FAST_METHOD_INVOCATION:
-				return evalFastMethodCall(node);			
 			case FUNCTION_CALL:
 				return evalFunctionCall( node );			
 			case BOOLEAN:
@@ -143,22 +157,6 @@ public class Evaluator {
 			operands.add( result.value() );
 		}
 		return invokeFunction( func.getFunctionName() , operands );		
-	}
-
-	private Result evalFastMethodCall(ASTNode node) {
-		try {
-			final FastMethodInvocation funcNode = (FastMethodInvocation) node;
-			if ( funcNode.isVoidMethod() ) {
-				funcNode.invoke();
-				return VOID_RESULT;
-			}
-			return result( funcNode.invoke() );
-		} 
-		catch (Exception e) 
-		{
-			e.printStackTrace();
-			throw new RuntimeException("Failed to perform method invocation "+node);
-		}
 	}
 
 	private Result evalOperator(ASTNode node) 

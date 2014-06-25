@@ -8,7 +8,6 @@ import java.util.List;
 import de.codesourcery.tinyscript.ast.AST;
 import de.codesourcery.tinyscript.ast.ASTNode;
 import de.codesourcery.tinyscript.ast.BooleanNode;
-import de.codesourcery.tinyscript.ast.FastMethodInvocation;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;
 import de.codesourcery.tinyscript.ast.ILiteralNode;
 import de.codesourcery.tinyscript.ast.NumberNode;
@@ -19,6 +18,7 @@ import de.codesourcery.tinyscript.ast.VariableNode;
 public class ASTSimplifier 
 {
 	private boolean resolveVariables = true;
+	private boolean foldConstants = true;
 	
 	private IScope scope = new IScope() {
 
@@ -38,6 +38,10 @@ public class ASTSimplifier
 		}		
 	};		
 	
+	public void setFoldConstants(boolean foldConstants) {
+		this.foldConstants = foldConstants;
+	}
+	
 	public ASTNode simplify(ASTNode node,Object target) 
 	{
 		switch( node.getNodeType() ) 
@@ -48,12 +52,13 @@ public class ASTSimplifier
 					result.add( simplify( child , target ) );
 				}
 				return result;
-			case FAST_METHOD_INVOCATION:
-				return node;
 			case FUNCTION_CALL:
 				return simplifyFunctionCall(node, target);				
 			case OPERATOR:
-				return simplifyOperator(node, target);
+				if ( foldConstants ) {
+					return simplifyOperator(node, target);
+				}
+				return node;
 			case BOOLEAN:
 			case STRING:
 			case NUMBER:
@@ -87,24 +92,6 @@ public class ASTSimplifier
 			}
 			newChildren.add( value );
 		}
-		if ( operands.size() == func.getChildCount() ) 
-		{
-			final Method methodToInvoke = Evaluator.findMethod( func.getFunctionName() , operands , target.getClass().getMethods() );
-			
-			// replace pure (side-effect free) functions with their actual results
-			if ( hasNoSideEffects( methodToInvoke ) ) 
-			{
-				try {
-					return toLiteralNode( methodToInvoke.invoke( target ,  operands.toArray( new Object[operands.size() ]) ) );
-				}
-				catch (Exception e ) 
-				{
-					e.printStackTrace();
-					throw new RuntimeException("Caught exception while invoking "+methodToInvoke+" on "+target);
-				}
-			}
-			return new FastMethodInvocation( target ,  methodToInvoke , operands );
-		} 
 		node.setChildren( newChildren );
 		return node;
 	}

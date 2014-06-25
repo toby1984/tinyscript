@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.codesourcery.tinyscript.ast.ASTNode;
-import de.codesourcery.tinyscript.ast.ASTNode.NodeType;
-import de.codesourcery.tinyscript.ast.FastMethodInvocation;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;
 import de.codesourcery.tinyscript.ast.NumberNode;
 import de.codesourcery.tinyscript.ast.OperatorNode;
@@ -14,15 +12,15 @@ import de.codesourcery.tinyscript.ast.VariableNode;
 
 public class Typer {
 
-	private final Object target;
+	private final Class<?> targetClass;
 	private final IScope scope;
 	
 	private Map<Identifier,Class<?>> types = new HashMap<>();
 	
-	public Typer(Object target,IScope scope) 
+	public Typer(IScope scope,Class<?> targetClass) 
 	{
-		this.target = target;
 		this.scope = scope;
+		this.targetClass = targetClass;
 	}
 	
 	public void type(ASTNode tree) {
@@ -45,18 +43,13 @@ public class Typer {
 			case BOOLEAN:
 				tree.setDataType( Boolean.class );
 				return;
-			case FAST_METHOD_INVOCATION:
 			case FUNCTION_CALL:
 				final Class<?> returnType;
-				if ( tree.getNodeType() == NodeType.FAST_METHOD_INVOCATION ) {
-					returnType = ((FastMethodInvocation) tree).methodToInvoke.getReturnType();
-				} 
-				else 
+				for ( ASTNode child : tree.children() ) {
+					calculateTypes( child );
+				}
+				
 				{
-					for ( ASTNode child : tree.children() ) {
-						calculateTypes( child );
-					}
-					
 					final Class<?>[] types = new Class<?>[ tree.getChildCount() ];
 					int i = 0;
 					for ( ASTNode child : tree.children() ) 
@@ -67,13 +60,13 @@ public class Typer {
 						types[i++] = child.getDataType();
 					}
 					final FunctionCallNode fn = (FunctionCallNode) tree;
-					final Method method = Evaluator.findMethod( fn.getFunctionName() , types , target.getClass().getMethods() );
+					final Method method = Evaluator.findMethod( fn.getFunctionName() , types , targetClass.getMethods() );
 					returnType = method.getReturnType();
-				}
-				
-				if ( returnType != Void.class && returnType != Void.TYPE ) 
-				{
-					tree.setDataType( returnType );
+					
+					if ( returnType != Void.class && returnType != Void.TYPE ) 
+					{
+						tree.setDataType( returnType );
+					}
 				}
 				return;
 			case NUMBER:

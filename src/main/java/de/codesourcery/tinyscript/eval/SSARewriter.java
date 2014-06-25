@@ -54,8 +54,6 @@ public class SSARewriter
 				return addAssignment( tree );
 			case VARIABLE:
 				return ((VariableNode) tree).name;
-			case FAST_METHOD_INVOCATION:
-				return addAssignment( tree );				
 			case FUNCTION_CALL:
 			case OPERATOR:
 				if ( isAssignment( tree ) ) 

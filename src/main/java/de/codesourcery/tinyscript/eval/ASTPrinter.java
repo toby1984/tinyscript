@@ -3,7 +3,6 @@ package de.codesourcery.tinyscript.eval;
 import java.util.Iterator;
 
 import de.codesourcery.tinyscript.ast.ASTNode;
-import de.codesourcery.tinyscript.ast.FastMethodInvocation;
 import de.codesourcery.tinyscript.ast.FunctionCallNode;
 import de.codesourcery.tinyscript.ast.ILiteralNode;
 import de.codesourcery.tinyscript.ast.OperatorNode;
@@ -51,18 +50,6 @@ public class ASTPrinter {
 			buffer.append("(");
 			visit(node.child(0),buffer);
 			buffer.append(")");					
-			maybeAppendType(node,buffer);			
-			return;
-		case FAST_METHOD_INVOCATION:
-			FastMethodInvocation n = (FastMethodInvocation) node;
-			buffer.append( n.getFunctionName().getSymbol() ).append("(");
-			for ( int i = 0 ; i < n.arguments.length ; i++ ) {
-				buffer.append( n.arguments[i] );
-				if ((i+1) < n.arguments.length) {
-					buffer.append(",");
-				}
-			}
-			buffer.append(")");
 			maybeAppendType(node,buffer);			
 			return;
 		case FUNCTION_CALL:

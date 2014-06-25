@@ -12,7 +12,6 @@ public abstract class ASTNode
 	{
 		AST,
 		OPERATOR,
-		FAST_METHOD_INVOCATION,
 		FUNCTION_CALL,
 		BOOLEAN,
 		NUMBER,		

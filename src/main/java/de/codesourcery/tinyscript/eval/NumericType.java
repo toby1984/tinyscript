@@ -144,7 +144,9 @@ public enum NumericType
 	
 	public static NumericType getWiderType(Object a,Object b) 
 	{
-		return getWiderType(a.getClass() , b.getClass() );
+		Class<?> cl1 = StackBuilder.isInstructionResult( a ) ? StackBuilder.instructionResult( a ).type : a.getClass();
+		Class<?> cl2 = StackBuilder.isInstructionResult( b ) ? StackBuilder.instructionResult( b ).type : b.getClass();
+		return getWiderType( cl1,cl2 );
 	}
 
 	public static boolean eq(Object a, Object b) 

@@ -68,7 +68,7 @@ public class SSATest extends TestCase {
 		target = new TestClass();
 		AST result = parse(expr);
 		
-		new Typer(target,scope).type( result );
+		new Typer(scope,TestClass.class).type( result );
 		
 		result.prettyPrint();
 		

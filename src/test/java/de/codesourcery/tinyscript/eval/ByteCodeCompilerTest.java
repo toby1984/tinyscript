@@ -56,29 +56,48 @@ public class ByteCodeCompilerTest extends TestCase {
 	
 	}
 	
+	public static final class TestTarget {
+		
+		public Integer value1() {
+			return 1;
+		}
+		
+		public Integer value2() {
+			return 41;
+		}
+		
+		public Integer testMethod(Integer a,Integer b) {
+			System.out.println("==== Test method invoked ===");
+			return a-b;
+		}		
+	}
+	
 	public void test() throws Exception {
+		
+		target = new TestTarget();
+		scope = null;
 		
 		ByteCodeCompiler comp = new ByteCodeCompiler("TestClass");
 		
-		final AST ast = parse("1+2");
+		final AST ast = parse("testMethod(1+3,2+3)");
 		
 		ast.prettyPrint();
 		
-		byte[] data = comp.compile( ast );
+		byte[] data = comp.compile( ast , TestTarget.class  );
 		
 		final FileOutputStream out = new FileOutputStream( new File("/tmp/TestClass.class" ) );
 		out.write( data );
 		out.close();
 		System.out.println( data.length+" bytes written.");
-		
-		final CompiledExpression instance = compile( data );
+
+		final CompiledExpression<TestTarget> instance = compile( data , (TestTarget) target , TestTarget.class , scope );
 		System.out.println("RESULT = "+instance.apply());
 	}
 	
-	private CompiledExpression compile(byte[] bytecode) throws Exception 
+	private <T> CompiledExpression<T> compile(byte[] bytecode,T target,Class<T> targetClass,IScope scope) throws Exception 
 	{
 		final Class<?> cl = defineClass(bytecode);
-		return (CompiledExpression) cl.getConstructor( Object.class , IScope.class ).newInstance( null , null );
+		return (CompiledExpression<T>) cl.getConstructor( Object.class , Class.class, IScope.class ).newInstance( target , targetClass , scope );
 	}
 	
 	private Class<?> defineClass(final byte[] bytecode) throws ClassNotFoundException  {
@@ -144,6 +163,7 @@ public class ByteCodeCompilerTest extends TestCase {
 				return "inliningTest".equals( method.getName() );
 			}
 		};
+		
 		simplifier.setScope( new IScope() {
 			
 			@Override
@@ -164,9 +184,9 @@ public class ByteCodeCompilerTest extends TestCase {
 		
 		simplifier.setResolveVariables(resolveVariables);
 		
+		simplifier.setFoldConstants( false );
 		AST ast = (AST) simplifier.simplify( result ,  target );
-		ast = transform(ast);
-		new Typer(target,scope).type( ast );
+		new Typer(scope,target == null ? Object.class : target.getClass() ).type( ast );
 		return ast;
 	}	
 }

@@ -9,8 +9,6 @@ import java.util.function.BiFunction;
 import junit.framework.TestCase;
 import de.codesourcery.tinyscript.ast.AST;
 import de.codesourcery.tinyscript.ast.ASTNode;
-import de.codesourcery.tinyscript.ast.FastMethodInvocation;
-import de.codesourcery.tinyscript.ast.FunctionCallNode;
 import de.codesourcery.tinyscript.ast.NumberNode;
 import de.codesourcery.tinyscript.eval.Evaluator.Result;
 import de.codesourcery.tinyscript.parser.ASTBuilder;
@@ -218,23 +216,6 @@ public class EvaluatorTest extends TestCase {
 		final int value = ((Number) result.value()).intValue();
 		assertEquals( (int) 3 , value );
 	}
-	
-	public void testParseMultipleStatements() {
-		
-		evaluator.setTarget( new TestTarget1() );
-		
-		final AST ast = parse("apply(1,2);apply(3,4)",false);
-		
-		assertEquals( 2 , ast.getChildCount() );
-		assertSame( FastMethodInvocation.class , ast.child(0).getClass() );
-		assertSame( FastMethodInvocation.class , ast.child(1).getClass() );
-		
-		assertEquals( new Integer(1) , ((FastMethodInvocation) ast.child(0)).arguments[0] );
-		assertEquals( new Integer(2) , ((FastMethodInvocation) ast.child(0)).arguments[1] );
-		
-		assertEquals( new Integer(3) , ((FastMethodInvocation) ast.child(1)).arguments[0] );
-		assertEquals( new Integer(4) , ((FastMethodInvocation) ast.child(1)).arguments[1] );
-	}	
 	
 	public void testMethodInvocation3() {
 		
