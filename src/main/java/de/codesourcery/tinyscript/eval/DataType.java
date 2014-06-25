@@ -1,7 +1,6 @@
 package de.codesourcery.tinyscript.eval;
 
 import de.codesourcery.tinyscript.ast.ASTNode;
-import de.codesourcery.tinyscript.ast.NumberNode;
 
 public enum DataType 
 {
@@ -57,6 +56,7 @@ public enum DataType
 				return DataType.NUMBER;
 			case STRING:
 				return DataType.STRING;
+			default:
 		}
 		throw new IllegalArgumentException("Cannot determine datatype for "+node);	
 	}

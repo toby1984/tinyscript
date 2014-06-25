@@ -153,6 +153,7 @@ public class ASTSimplifier
 		throw new RuntimeException("Don't know how to convert literal "+obj+" to AST node");
 	}
 	
+	@SuppressWarnings("unused")
 	private final boolean hasNoSideEffects(Method method) 
 	{
 		if ( method.getReturnType() == Void.TYPE || method.getReturnType() == Void.class ) 

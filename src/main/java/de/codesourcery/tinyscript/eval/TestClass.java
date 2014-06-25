@@ -4,7 +4,7 @@ package de.codesourcery.tinyscript.eval;
 public class TestClass extends CompiledExpression<Integer> {
 
 	public TestClass(Integer target, IScope variableResolver) {
-		super(target, Integer.class,variableResolver);
+		super(target,variableResolver);
 	}
 
 	@Override

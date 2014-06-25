@@ -1,8 +1,6 @@
 package de.codesourcery.tinyscript.eval;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.TypeVariable;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -14,14 +12,14 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import de.codesourcery.tinyscript.ast.AST;
 
-public class ByteCodeCompiler {
+public class ExpressionCompiler {
 
 	private final String className;
 	private ClassVisitor classWriter;
 
 	private MethodVisitor mv;
 
-	public ByteCodeCompiler(String className) {
+	public ExpressionCompiler(String className) {
 		this.className = convertClassName(className);
 	}
 
@@ -48,7 +46,6 @@ public class ByteCodeCompiler {
 		// verify
 		ClassReader cr = new ClassReader(byteArray);
 		cr.accept(new CheckClassAdapter(new ClassWriter(0)), 0);		
-
 		return byteArray;
 	}
 
@@ -71,23 +68,22 @@ public class ByteCodeCompiler {
 				null // interfaces
 				);
 
-		mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;Ljava/lang/Class;Lde/codesourcery/tinyscript/eval/IScope;)V", 
+		mv = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Ljava/lang/Object;Lde/codesourcery/tinyscript/eval/IScope;)V", 
 				null, // signature
 		        null); // exceptions
 		
 		mv.visitCode();
 		mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this' pointer
 		
-		// 	public CompiledExpression(T target, Class<T> targetClass,IScope variableResolver) 		
+		// 	public CompiledExpression(T target, IScope variableResolver) 		
 		mv.visitVarInsn(Opcodes.ALOAD, 1); // target
-		mv.visitVarInsn(Opcodes.ALOAD, 2); // targetClass
-		mv.visitVarInsn(Opcodes.ALOAD, 3); // variableResolver
+		mv.visitVarInsn(Opcodes.ALOAD, 2); // scope
 
 		// invoke constructor
 
 		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "de/codesourcery/tinyscript/eval/CompiledExpression", 
 				"<init>", 
-				"(Ljava/lang/Object;Ljava/lang/Class;Lde/codesourcery/tinyscript/eval/IScope;)V");
+				"(Ljava/lang/Object;Lde/codesourcery/tinyscript/eval/IScope;)V");
 		mv.visitInsn(Opcodes.RETURN);
 		mv.visitMaxs(0, 0);
 		mv.visitEnd();

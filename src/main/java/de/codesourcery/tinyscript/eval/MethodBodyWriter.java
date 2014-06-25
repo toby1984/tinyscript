@@ -466,7 +466,9 @@ public class MethodBodyWriter
 				return new InvokeMethodOnTarget( fn.functionName ).generate( visitor ,  fn , this );
 			case OPERATOR:
 				return pushOperator((OperatorNode) node , visitor );
+			default:
 			}
+			
 			throw new RuntimeException("Internal error,unhandled AST node "+node);
 	}
 

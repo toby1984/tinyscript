@@ -154,7 +154,7 @@ public class ByteCodeCompilerTest extends TestCase {
 		target = new TestTarget();
 		scope = null;
 		
-		ByteCodeCompiler comp = new ByteCodeCompiler("TestClass");
+		ExpressionCompiler comp = new ExpressionCompiler("TestClass");
 		
 		final AST ast = parse( expression );
 		
@@ -167,16 +167,16 @@ public class ByteCodeCompilerTest extends TestCase {
 		out.close();
 		System.out.println( data.length+" bytes written.");
 
-		final CompiledExpression<TestTarget> instance = compile( data , (TestTarget) target , TestTarget.class , scope );
+		final CompiledExpression<TestTarget> instance = compile( data , (TestTarget) target , scope );
 		Object result = instance.apply();
 		System.out.println("RESULT = "+result+" ("+(result==null?"NULL":result.getClass().getName())+")");
 		return result;
 	}
 	
-	private <T> CompiledExpression<T> compile(byte[] bytecode,T target,Class<T> targetClass,IScope scope) throws Exception 
+	private <T> CompiledExpression<T> compile(byte[] bytecode,T target,IScope scope) throws Exception 
 	{
 		final Class<?> cl = defineClass(bytecode);
-		return (CompiledExpression<T>) cl.getConstructor( Object.class , Class.class, IScope.class ).newInstance( target , targetClass , scope );
+		return (CompiledExpression<T>) cl.getConstructor( Object.class , IScope.class ).newInstance( target , scope );
 	}
 	
 	private Class<?> defineClass(final byte[] bytecode) throws ClassNotFoundException  {

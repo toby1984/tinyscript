@@ -3,9 +3,6 @@ package de.codesourcery.tinyscript.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.codesourcery.tinyscript.eval.DataType;
-import de.codesourcery.tinyscript.eval.NumericType;
-
 public abstract class ASTNode 
 {
 	public static enum NodeType 
